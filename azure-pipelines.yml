@@ -45,7 +45,7 @@ stages:
         steps:          
           - script: |
               mkdir -p /app/output
-              docker run --network=host 
+              docker run --network=host \
               -v $(Build.ArtifactStagingDirectory):/app/output \
               -e BUILD_ARTIFACTSTAGINGDIRECTORY=/app/output \
               $(DOCKER_HUB_REPO):$(IMAGE_TAG)
