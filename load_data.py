@@ -70,8 +70,8 @@ def convert_to_parquet(file_info):
         df.write.mode("overwrite").saveAsTable("default.my_table") 
         
         # Get the output directory from an environment variable
-        artifcat_output_dir = os.getenv("BUILD_ARTIFACTSTAGINGDIRECTORY", "output")
-        csv_path = os.path.join(artifcat_output_dir, {file_info["file_to_load"]})
+        artifact_output_dir = os.getenv("BUILD_ARTIFACTSTAGINGDIRECTORY", "output")
+        csv_path = os.path.join(artifact_output_dir, file_info["file_to_load"])
 
         # Save to CSV
         df.to_csv(csv_path, index=False)
