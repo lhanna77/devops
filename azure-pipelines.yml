@@ -44,7 +44,11 @@ stages:
         displayName: "Run Spark Job in Docker"
         steps:          
           - script: |
-              docker run --network=host $(DOCKER_HUB_REPO):$(IMAGE_TAG)
+              mkdir -p /app/output
+              docker run --network=host 
+              -v $(Build.ArtifactStagingDirectory):/app/output \
+              -e BUILD_ARTIFACTSTAGINGDIRECTORY=/app/output \
+              $(DOCKER_HUB_REPO):$(IMAGE_TAG)
             displayName: "Run Spark Job"
 
           - task: PublishBuildArtifacts@1

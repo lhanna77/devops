@@ -69,10 +69,19 @@ def convert_to_parquet(file_info):
         # Create database if not exists
         spark.sql("CREATE DATABASE IF NOT EXISTS default")
         df.write.mode("overwrite").saveAsTable("default.my_table") 
-        
-        # Get the output directory from an environment variable
-        artifact_output_dir = os.getenv("BUILD_ARTIFACTSTAGINGDIRECTORY", "output")
+
+        # 1. Get the output directory from the environment variable
+        artifact_output_dir = os.environ.get("BUILD_ARTIFACTSTAGINGDIRECTORY")
+
+        # 2. Check if the environment variable is set (CRUCIAL)
+        if artifact_output_dir is None:
+            raise ValueError("BUILD_ARTIFACTSTAGINGDIRECTORY environment variable is not set.")
+
+        # 3. Construct the full CSV file path
         csv_path = os.path.join(artifact_output_dir, file_info["file_to_load"])
+
+        # 4. (Optional but Recommended) Create the directory if it doesn't exist 
+        os.makedirs(artifact_output_dir, exist_ok=True)
 
         # Save to CSV
         df.toPandas().to_csv(csv_path, header=False, index=False)
