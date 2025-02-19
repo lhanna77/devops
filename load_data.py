@@ -1,5 +1,6 @@
 
 import os
+from pandas import to_csv
 from pyspark.sql.functions import lit
 from pyspark.sql import SparkSession
 
@@ -74,7 +75,7 @@ def convert_to_parquet(file_info):
         csv_path = os.path.join(artifact_output_dir, file_info["file_to_load"])
 
         # Save to CSV
-        df.toPandas().to_csv.to_csv(csv_path, header=False ,index=False)
+        df.toPandas().to_csv(csv_path, header=False, index=False)
         
         # Show tables
         spark.sql("SELECT * FROM default.my_table LIMIT 10").show()
