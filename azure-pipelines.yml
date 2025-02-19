@@ -42,12 +42,7 @@ stages:
     jobs:
       - job: DeploySparkJob
         displayName: "Run Spark Job in Docker"
-        steps:
-          - script: |
-              python -m pip install --upgrade pip
-              pip3 install pandas
-            displayName: "Install Pandas"
-          
+        steps:          
           - script: |
               docker run --network=host $(DOCKER_HUB_REPO):$(IMAGE_TAG)
             displayName: "Run Spark Job"
