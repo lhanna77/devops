@@ -46,3 +46,9 @@ stages:
           - script: |
               docker run --network=host $(DOCKER_HUB_REPO):$(IMAGE_TAG)
             displayName: "Run Spark Job"
+
+          - task: PublishBuildArtifacts@1
+            inputs:
+              pathToPublish: "$(Build.ArtifactStagingDirectory)"
+              artifactName: "csv-results"
+            displayName: "Upload CSV Results"
