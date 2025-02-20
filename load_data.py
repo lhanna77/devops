@@ -41,7 +41,7 @@ def populate_file_dict_list(directory):
 
     return file_dict_list
 
-def create_artifact_csv(df):
+def create_artifact_csv(df, csv_file_name):
     
     # 1. Get the output directory from the environment variable
     artifact_output_dir = os.environ.get("BUILD_ARTIFACTSTAGINGDIRECTORY")
@@ -51,7 +51,7 @@ def create_artifact_csv(df):
         raise ValueError("BUILD_ARTIFACTSTAGINGDIRECTORY environment variable is not set.")
 
     # 3. Construct the full CSV file path
-    csv_path = os.path.join(artifact_output_dir, "my_csv.csv")
+    csv_path = os.path.join(artifact_output_dir, csv_file_name)
 
     # 4. (Optional but Recommended) Create the directory if it doesn't exist 
     os.makedirs(artifact_output_dir, exist_ok=True)
@@ -77,7 +77,6 @@ def convert_to_parquet(file_info):
     if not os.path.exists(f'data_lake/{file_name}/year={year}/month={month}/day={day}') == True:
     
         file_path = f'data/{file_info["file_to_load"]}'
-        #df = spark.read.option("delimiter", "\t").csv(file_path, header=True, inferSchema=True)
         
         df = spark.read.format("csv").load(file_path, header=False, inferSchema=True, delimiter=file_info['file_delimiter'])
         
@@ -97,7 +96,7 @@ def convert_to_parquet(file_info):
         # Show tables
         spark.sql("SELECT * FROM default.my_table LIMIT 10").show()
         
-        create_artifact_csv(df)
+        create_artifact_csv(df,file_info["file_to_load"])
         
     else:
         print(f'{file_name_date} already exists in parquet')
