@@ -46,7 +46,7 @@ def get_stage_load_count(table_name: str) -> int:
         # Add max CreatedDate to a variable
         record_count = spark.sql(f'SELECT COUNT(*) as record_count FROM stage_ad_works.{table_name}').collect()[0]['record_count']
         
-        print(f'record count - stage_ad_works,{table_name}: {record_count}')
+        print(f'record count - stage_ad_works.{table_name}: {record_count}')
 
         return record_count
     
@@ -66,6 +66,10 @@ def create_ad_works_db_table(df_datalake, db_name: str, table_name: str, schema)
         if db_name == 'ad_works':
             df_datalake.write.mode("overwrite").saveAsTable(f'{db_name}.{table_name}', schema=schema)
             spark.sql(f"TRUNCATE TABLE {db_name}.{table_name}")
+            
+            # Show table description
+            spark.sql(f'DESCRIBE {db_name}.{table_name}').show()
+            
             print(f'{db_name}.{table_name} table created')
         else:
             # Create table from df_datalake using schema dim_date_schema
