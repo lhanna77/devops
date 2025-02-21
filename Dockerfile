@@ -7,9 +7,9 @@ WORKDIR /app
 COPY requirements.txt .  
 RUN pip install -r requirements.txt
 
-COPY load_data.py .
+COPY load_data_lake.py .
 COPY data/ ./data/
 
-CMD [ "spark-submit", "load_data.py" ]
+# CMD [ "spark-submit", "load_data_lake.py" ]
 
-# CMD ["sh", "-c", "spark-submit load_data.py && python process_data2.py"]
+CMD ["sh", "-c", "spark-submit load_data_lake.py && python load_dwh_silver.py"]
