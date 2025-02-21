@@ -6,29 +6,8 @@ from silver.schemas.dimcurrency import dim_currency_schema
 from typing import Optional
 
 # Enable Hive support and specify warehouse directory
-spark = SparkSession.builder \
-    .appName("DataLoadDWH") \
-    .config("spark.sql.catalogImplementation", "hive") \
-    .config("spark.sql.warehouse.dir", "/tmp/spark-warehouse") \
-    .enableHiveSupport() \
-    .getOrCreate()
+spark = SparkSession.builder.getOrCreate()
 
-# checks if a directory specified by `data_lake_path` exists. 
-data_lake_path = f'silver/'
-
-if not os.path.exists(data_lake_path):
-    os.makedirs(data_lake_path)
-    print(f'{data_lake_path} created')
-else:
-    print(f'{data_lake_path} already exists')
-    
-# Extract column names from the schema
-dim_date_column_names = [field.name for field in dim_date_schema.fields]
-dim_currency_column_names = [field.name for field in dim_currency_schema.fields]
-
-local = [{"table_name": "dimdate", "pk": "DateKey", "schema":dim_date_schema, "column_names": dim_date_column_names},
-         {"table_name": "dimcurrency", "pk": "CurrencyKey", "schema":dim_currency_schema, "column_names": dim_currency_column_names}
-         ]
 
 def check_table_exists(db_name: str, table_name: str) -> bool:
     if spark.catalog.tableExists(f'{db_name}.{table_name}'):
@@ -39,11 +18,11 @@ def check_table_exists(db_name: str, table_name: str) -> bool:
         return False
 
 def check_file_exists(csv_directory: str) -> bool:  
-    if os.path.exists(f'{csv_directory}.csv'):
-        print(f'{csv_directory}.csv exists')
+    if os.path.exists(f'{csv_directory}'):
+        print(f'{csv_directory} exists')
         return True
     else:
-        print(f'{csv_directory}.csv does not exist')
+        print(f'{csv_directory} does not exist')
         return False
 
 def get_last_load_date(table_name: str) -> Optional[str]:
@@ -122,85 +101,105 @@ def create_csv_from_dwh(db_name: str, table_name: str, csv_directory: str) -> No
     if check_table_exists(db_name, table_name):
         df_datalake = spark.sql(f'SELECT * FROM {db_name}.{table_name}')
         
-        csv_artifact_directory = create_artifact_csv(f'{csv_directory}.csv')
-        
+        csv_artifact_directory = create_artifact_csv(f'{table_name}.csv')
+
+        df_datalake.toPandas().to_csv(csv_directory, header=True, index=False)        
         df_datalake.toPandas().to_csv(csv_artifact_directory, header=True, index=False)
         print(f'{db_name}.{table_name} csv created')
     else:
         print(f'Table {db_name}.{table_name} does not exist')
+  
+def load_dwh_silver():
+
+    # checks if a directory specified by `data_lake_path` exists. 
+    data_lake_path = f'silver/'
+
+    if not os.path.exists(data_lake_path):
+        os.makedirs(data_lake_path)
+        print(f'{data_lake_path} created')
+    else:
+        print(f'{data_lake_path} already exists')
         
-for table in local:
-    
-    # Define the directory containing the parquet files
-    parquet_directory = f'data_lake/{table["table_name"]}'
-    csv_directory = f'silver/{table["table_name"]}'
+    # Extract column names from the schema
+    dim_date_column_names = [field.name for field in dim_date_schema.fields]
+    dim_currency_column_names = [field.name for field in dim_currency_schema.fields]
 
-    df_datalake = spark.read.parquet(parquet_directory)
-    
-    df_datalake_filtered = df_datalake.filter(df_datalake['CreatedDate'] > get_last_load_date(table["table_name"]))
-    
-    # Update df_datalake with column_names from local
-    for old_col, new_col in zip(df_datalake_filtered.columns, table['column_names']):
-        df_datalake_filtered = df_datalake_filtered.withColumnRenamed(old_col, new_col)
+    local = [{"table_name": "dimdate", "pk": "DateKey", "schema":dim_date_schema, "column_names": dim_date_column_names},
+            {"table_name": "dimcurrency", "pk": "CurrencyKey", "schema":dim_currency_schema, "column_names": dim_currency_column_names}
+            ]
 
-    create_ad_works_db_table(df_datalake_filtered,'stage_ad_works',table["table_name"],schema=["schema"])
+    for table in local:
+        
+        # Define the directory containing the parquet files
+        parquet_directory = f'data_lake/{table["table_name"]}'
+        csv_directory = f'silver/{table["table_name"]}.csv'
 
-    if get_stage_load_count(table["table_name"]) > 0:
+        df_datalake = spark.read.parquet(parquet_directory)
+        
+        df_datalake_filtered = df_datalake.filter(df_datalake['CreatedDate'] > get_last_load_date(table["table_name"]))
+        
+        # Update df_datalake with column_names from local
+        for old_col, new_col in zip(df_datalake_filtered.columns, table['column_names']):
+            df_datalake_filtered = df_datalake_filtered.withColumnRenamed(old_col, new_col)
 
-        query = f'''
-        SELECT * FROM (
-            SELECT *, ROW_NUMBER() OVER (PARTITION BY {table["pk"]} ORDER BY UpdatedDate DESC) as row_num
+        create_ad_works_db_table(df_datalake_filtered,'stage_ad_works',table["table_name"],schema=["schema"])
+
+        if get_stage_load_count(table["table_name"]) > 0:
+
+            query = f'''
+            SELECT * FROM (
+                SELECT *, ROW_NUMBER() OVER (PARTITION BY {table["pk"]} ORDER BY UpdatedDate DESC) as row_num
+                FROM stage_ad_works.{table["table_name"]}
+            ) WHERE row_num = 1
+            '''
+            
+            df_datalake_dedupe = spark.sql(query)
+            df_datalake_dedupe = df_datalake_dedupe.drop('row_num')
+            
+            df_datalake_empty = df_datalake_filtered.filter(df_datalake_filtered['CreatedDate'] < '1900-01-01')        
+            
+            create_ad_works_db_table(df_datalake_empty,'ad_works',table["table_name"],schema=["schema"])
+            
+        #     # Perform the merge operation
+        #     # merge_query = f"""
+        #     # MERGE INTO ad_works.{table["table_name"]} AS main
+        #     # USING {table["table_name"]}_temp AS temp
+        #     # ON main.DateKey = temp.DateKey
+        #     # WHEN MATCHED THEN
+        #     #     UPDATE SET main.UpdatedDate = temp.UpdatedDate
+        #     # WHEN NOT MATCHED THEN
+        #     #     INSERT *
+        #     # """
+        #     # spark.sql(merge_query)
+            
+        #     # MERGE INTO TABLE is not supported temporarily.
+
+        # Count of new records to be inserted
+        new_records_count = spark.sql(f"""
+            SELECT COUNT(*) as count
             FROM stage_ad_works.{table["table_name"]}
-        ) WHERE row_num = 1
-        '''
-        
-        df_datalake_dedupe = spark.sql(query)
-        df_datalake_dedupe = df_datalake_dedupe.drop('row_num')
-        
-        df_datalake_empty = df_datalake_filtered.filter(df_datalake_filtered['CreatedDate'] < '1900-01-01')        
-        
-        create_ad_works_db_table(df_datalake_empty,'ad_works',table["table_name"],schema=["schema"])
-        
-    #     # Perform the merge operation
-    #     # merge_query = f"""
-    #     # MERGE INTO ad_works.{table["table_name"]} AS main
-    #     # USING {table["table_name"]}_temp AS temp
-    #     # ON main.DateKey = temp.DateKey
-    #     # WHEN MATCHED THEN
-    #     #     UPDATE SET main.UpdatedDate = temp.UpdatedDate
-    #     # WHEN NOT MATCHED THEN
-    #     #     INSERT *
-    #     # """
-    #     # spark.sql(merge_query)
-        
-    #     # MERGE INTO TABLE is not supported temporarily.
+            WHERE {table["pk"]} NOT IN (SELECT {table["pk"]} FROM ad_works.{table["table_name"]})
+        """).collect()[0]['count']
+        print(f'New records to be inserted: {new_records_count}')
 
-    # Count of new records to be inserted
-    new_records_count = spark.sql(f"""
-        SELECT COUNT(*) as count
-        FROM stage_ad_works.{table["table_name"]}
-        WHERE {table["pk"]} NOT IN (SELECT {table["pk"]} FROM ad_works.{table["table_name"]})
-    """).collect()[0]['count']
-    print(f'New records to be inserted: {new_records_count}')
-
-    # Count of existing records to be updated
-    existing_records_count = spark.sql(f"""
-        SELECT COUNT(*) as count
-        FROM stage_ad_works.{table["table_name"]} AS temp
-        JOIN ad_works.{table["table_name"]} AS existing
-        ON temp.{table["pk"]} = existing.{table["pk"]}
-        WHERE temp.UpdatedDate > existing.UpdatedDate
-    """).collect()[0]['count']
-    print(f'Existing records to be updated: {existing_records_count}')  
-    
-    # Insert new records
-    df_new_records = spark.sql(f"""
-        SELECT temp.*
-        FROM stage_ad_works.{table["table_name"]} AS temp
-        LEFT JOIN ad_works.{table["table_name"]} AS existing
-        ON temp.{table["pk"]} = existing.{table["pk"]}
-        WHERE existing.{table["pk"]} IS NULL
-    """)
-    df_new_records.write.mode("append").saveAsTable(f'ad_works.{table["table_name"]}')
+        # Count of existing records to be updated
+        existing_records_count = spark.sql(f"""
+            SELECT COUNT(*) as count
+            FROM stage_ad_works.{table["table_name"]} AS temp
+            JOIN ad_works.{table["table_name"]} AS existing
+            ON temp.{table["pk"]} = existing.{table["pk"]}
+            WHERE temp.UpdatedDate > existing.UpdatedDate
+        """).collect()[0]['count']
+        print(f'Existing records to be updated: {existing_records_count}')  
         
-    create_csv_from_dwh('ad_works',table["table_name"],csv_directory)
+        # Insert new records
+        df_new_records = spark.sql(f"""
+            SELECT temp.*
+            FROM stage_ad_works.{table["table_name"]} AS temp
+            LEFT JOIN ad_works.{table["table_name"]} AS existing
+            ON temp.{table["pk"]} = existing.{table["pk"]}
+            WHERE existing.{table["pk"]} IS NULL
+        """)
+        df_new_records.write.mode("append").saveAsTable(f'ad_works.{table["table_name"]}')
+            
+        create_csv_from_dwh('ad_works',table["table_name"],csv_directory)

@@ -5,22 +5,8 @@ from pyspark.sql.functions import lit
 from pyspark.sql import SparkSession
 
 # Enable Hive support and specify warehouse directory
-spark = SparkSession.builder \
-    .appName("DataLoadDL") \
-    .config("spark.sql.catalogImplementation", "hive") \
-    .config("spark.sql.warehouse.dir", "/tmp/spark-warehouse") \
-    .enableHiveSupport() \
-    .getOrCreate()
+spark = SparkSession.builder.getOrCreate()
 
-# checks if a directory specified by `data_lake_path` exists. 
-data_lake_path = f'data_lake/'
-
-if not os.path.exists(data_lake_path):
-    os.makedirs(data_lake_path)
-    print(f'{data_lake_path} created')
-else:
-    print(f'{data_lake_path} already exists')
-    
 def populate_file_dict_list(directory: str) -> list:
     
     file_dict_list = []
@@ -100,13 +86,24 @@ def convert_to_parquet(file_info: dict) -> None:
     else:
         print(f'{file_name_date} already exists in parquet')
 
-# Example usage
-directory = f'data'
-file_dict_list = populate_file_dict_list(directory)
-print(file_dict_list)
+def load_data_lake():
 
-for file_info in file_dict_list:
-    convert_to_parquet(file_info)
+    # checks if a directory specified by `data_lake_path` exists. 
+    data_lake_path = f'data_lake/'
+
+    if not os.path.exists(data_lake_path):
+        os.makedirs(data_lake_path)
+        print(f'{data_lake_path} created')
+    else:
+        print(f'{data_lake_path} already exists')
+
+    # Example usage
+    directory = f'data'
+    file_dict_list = populate_file_dict_list(directory)
+    print(file_dict_list)
+
+    for file_info in file_dict_list:
+        convert_to_parquet(file_info)
     
 # docker-compose up -d
 
