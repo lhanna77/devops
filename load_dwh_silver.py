@@ -1,8 +1,8 @@
 import os
 from pyspark.sql.functions import lit
 from pyspark.sql import SparkSession
-from silver.schemas.dimdate import dim_date_schema
-from silver.schemas.dimcurrency import dim_currency_schema
+from schemas.dimdate import dim_date_schema
+from schemas.dimcurrency import dim_currency_schema
 from typing import Optional
 
 # Enable Hive support and specify warehouse directory
