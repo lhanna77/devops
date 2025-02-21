@@ -8,6 +8,7 @@ COPY requirements.txt .
 RUN pip install -r requirements.txt
 
 COPY load_data_lake.py .
+COPY load_dwh_silver.py .
 COPY data/ ./data/
 
 # CMD [ "spark-submit", "load_data_lake.py" ]
