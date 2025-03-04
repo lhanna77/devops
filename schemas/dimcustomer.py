@@ -1,0 +1,33 @@
+from pyspark.sql.types import StructType, StructField, IntegerType, StringType, DateType, BooleanType, DecimalType, ByteType
+
+dim_customer_schema = StructType([
+    StructField("CustomerKey", IntegerType()),
+    StructField("GeographyKey", IntegerType()),
+    StructField("CustomerAlternateKey", StringType()),
+    StructField("Title", StringType()),
+    StructField("FirstName", StringType()),
+    StructField("MiddleName", StringType()),
+    StructField("LastName", StringType()),
+    StructField("NameStyle", BooleanType()),
+    StructField("BirthDate", DateType()),
+    StructField("MaritalStatus", StringType()),
+    StructField("Suffix", StringType()),
+    StructField("Gender", StringType()),
+    StructField("EmailAddress", StringType()),
+    StructField("YearlyIncome", DecimalType(10, 2)),
+    StructField("TotalChildren", ByteType()),
+    StructField("NumberChildrenAtHome", ByteType()),
+    StructField("EnglishEducation", StringType()),
+    StructField("SpanishEducation", StringType()),
+    StructField("FrenchEducation", StringType()),
+    StructField("EnglishOccupation", StringType()),
+    StructField("SpanishOccupation", StringType()),
+    StructField("FrenchOccupation", StringType()),
+    StructField("HouseOwnerFlag", StringType()),
+    StructField("NumberCarsOwned", ByteType()),
+    StructField("AddressLine1", StringType()),
+    StructField("AddressLine2", StringType()),
+    StructField("Phone", StringType()),
+    StructField("DateFirstPurchase", DateType()),
+    StructField("CommuteDistance", StringType())
+])

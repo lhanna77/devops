@@ -3,11 +3,11 @@ from pyspark.sql.functions import lit
 from pyspark.sql import SparkSession
 from schemas.dimdate import dim_date_schema
 from schemas.dimcurrency import dim_currency_schema
+from schemas.dimcustomer import dim_customer_schema
 from typing import Optional
 
 # Enable Hive support and specify warehouse directory
 spark = SparkSession.builder.getOrCreate()
-
 
 def check_table_exists(db_name: str, table_name: str) -> bool:
     if spark.catalog.tableExists(f'{db_name}.{table_name}'):
@@ -127,9 +127,11 @@ def load_dwh_silver():
     # Extract column names from the schema
     dim_date_column_names = [field.name for field in dim_date_schema.fields]
     dim_currency_column_names = [field.name for field in dim_currency_schema.fields]
+    dim_customer_column_names = [field.name for field in dim_customer_schema.fields]
 
     local = [{"table_name": "dimdate", "pk": "DateKey", "schema":dim_date_schema, "column_names": dim_date_column_names},
-            {"table_name": "dimcurrency", "pk": "CurrencyKey", "schema":dim_currency_schema, "column_names": dim_currency_column_names}
+            {"table_name": "dimcurrency", "pk": "CurrencyKey", "schema":dim_currency_schema, "column_names": dim_currency_column_names},
+            {"table_name": "dimcustomer", "pk": "CustomerKey", "schema":dim_customer_schema, "column_names": dim_customer_column_names}
             ]
 
     for table in local:
