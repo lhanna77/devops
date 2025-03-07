@@ -69,8 +69,8 @@ stages:
               versionSpec: '3.x'
               architecture: 'x64'
           - script: |
-              python load_test.py --junitxml=junit.xml
-            displayName: "Run load_test.py"
+              python load_tests.py --junitxml=junit.xml
+            displayName: "Run load_tests.py"
           - task: PublishTestResults@2
             inputs:
               testResultsFormat: 'JUnit'
