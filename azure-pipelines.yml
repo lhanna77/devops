@@ -53,20 +53,21 @@ stages:
 
           - script: |
               docker run --network=host \
+              -v $(System.DefaultWorkingDirectory):/hostworkdir \
               $(DOCKER_HUB_REPO):$(IMAGE_TAG) \
-              bash -c "pip install pytest pyspark && python load_tests.py --junitxml=junit.xml"
+              bash -c "pip install pytest pyspark && python load_tests.py --junitxml=/hostworkdir/junit.xml"
             displayName: "Run PySpark Tests"
 
           - task: PublishTestResults@2
             inputs:
               testResultsFormat: 'JUnit'
-              testResultsFiles: 'junit.xml'
+              testResultsFiles: '$(System.DefaultWorkingDirectory)/junit.xml'
             displayName: "Publish PySpark Test Results"
             condition: succeededOrFailed()
 
           - task: PublishPipelineArtifact@1
             inputs:
-              targetPath: 'junit.xml'
+              targetPath: '$(System.DefaultWorkingDirectory)/junit.xml'
               artifact: 'PySparkTestResults'
               publishLocation: 'pipeline'
             displayName: 'Publish Test Results as Artifact'
