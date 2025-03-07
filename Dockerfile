@@ -10,6 +10,7 @@ RUN pip install -r requirements.txt
 COPY main.py .
 COPY load_data_lake.py .
 COPY load_dwh_silver.py .
+COPY load_tests.py .
 COPY data/ ./data/
 COPY schemas/ ./schemas/
 
