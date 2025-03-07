@@ -51,31 +51,28 @@ stages:
               $(DOCKER_HUB_REPO):$(IMAGE_TAG)
             displayName: "Run Spark Job"
 
+          - script: |
+              docker run --network=host \
+              $(DOCKER_HUB_REPO):$(IMAGE_TAG) \
+              bash -c "pip install pytest pyspark && python load_tests.py --junitxml=junit.xml"
+            displayName: "Run PySpark Tests"
+
+          - task: PublishTestResults@2
+            inputs:
+              testResultsFormat: 'JUnit'
+              testResultsFiles: 'junit.xml'
+            displayName: "Publish PySpark Test Results"
+            condition: succeededOrFailed()
+
+          - task: PublishPipelineArtifact@1
+            inputs:
+              targetPath: 'junit.xml'
+              artifact: 'PySparkTestResults'
+              publishLocation: 'pipeline'
+            displayName: 'Publish Test Results as Artifact'
+
           - task: PublishBuildArtifacts@1
             inputs:
               pathToPublish: "$(Build.ArtifactStagingDirectory)"
               artifactName: "csv-results"
             displayName: "Upload CSV Results"
-
-  - stage: LoadTest
-    displayName: "Run Load Test"
-    dependsOn: Deploy
-    jobs:
-      - job: RunLoadTest
-        displayName: "Execute Load Test Script"
-        steps:
-          - task: UsePythonVersion@0
-            inputs:
-              versionSpec: '3.x'
-              architecture: 'x64'
-          - script: |
-              pip install pytest pyspark
-            displayName: 'Install PySpark Dependencies'
-          - script: |
-              python load_tests.py --junitxml=junit.xml
-            displayName: "Run load_tests.py"
-          - task: PublishTestResults@2
-            inputs:
-              testResultsFormat: 'JUnit'
-              testResultsFiles: 'junit.xml'
-            condition: succeededOrFailed()
