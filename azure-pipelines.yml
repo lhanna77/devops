@@ -5,7 +5,7 @@ pool:
   vmImage: ubuntu-latest
 
 variables:
-  DOCKER_HUB_REPO: lhanna12/spark-job  # Replace with your Docker Hub username.
+  DOCKER_HUB_REPO: lhanna12/spark-job
   IMAGE_TAG: latest
 
 stages:
@@ -19,7 +19,7 @@ stages:
             displayName: "Login to Docker Hub"
             inputs:
               command: login
-              containerRegistry: DockerHubServiceConnection  # Must match service connection name
+              containerRegistry: DockerHubServiceConnection
 
           - task: Docker@2
             displayName: "Build Docker Image"
@@ -42,28 +42,18 @@ stages:
     jobs:
       - job: DeploySparkJob
         displayName: "Run Spark Job in Docker"
-        steps:          
+        steps:
           - script: |
               mkdir -p /app/output
-              docker run --network=host \
+              docker run --name lhanna12-spark-container --network=host \
               -v $(Build.ArtifactStagingDirectory):/app/output \
               -e BUILD_ARTIFACTSTAGINGDIRECTORY=/app/output \
               $(DOCKER_HUB_REPO):$(IMAGE_TAG)
             displayName: "Run Spark Job"
 
           - script: |
-              docker run --network=host \
-              -v $(System.DefaultWorkingDirectory):/hostworkdir \
-              $(DOCKER_HUB_REPO):$(IMAGE_TAG) \
-              bash -c "pip install pytest pyspark && find /.local/lib/python3.12/site-packages/ -name pytest"
-            displayName: "find pytest executable"
-
-          - script: |
-              docker run --network=host \
-              -v $(System.DefaultWorkingDirectory):/hostworkdir \
-              $(DOCKER_HUB_REPO):$(IMAGE_TAG) \
-              bash -c "pip install pytest pyspark && /.local/bin/pytest load_tests.py --junitxml=/hostworkdir/junit.xml"
-            displayName: "Run PySpark Tests"
+              docker cp lhanna12-spark-container:/app/junit.xml $(System.DefaultWorkingDirectory)/junit.xml
+            displayName: "Copy JUnit XML"
 
           - task: PublishTestResults@2
             inputs:
@@ -83,4 +73,4 @@ stages:
             inputs:
               pathToPublish: "$(Build.ArtifactStagingDirectory)"
               artifactName: "csv-results"
-            displayName: "Upload CSV Results"
+              displayName: "Upload CSV Results"
