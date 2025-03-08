@@ -21,7 +21,7 @@ if __name__ == "__main__":
 
     try:
         load_data_lake()
-        load_dwh_silver()
+        #load_dwh_silver()
 
     except Exception as e:
         print(f"An error occurred: {e}")

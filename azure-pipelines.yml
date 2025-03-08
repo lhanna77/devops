@@ -55,7 +55,7 @@ stages:
               docker run --network=host \
               -v $(System.DefaultWorkingDirectory):/hostworkdir \
               $(DOCKER_HUB_REPO):$(IMAGE_TAG) \
-              bash -c "pip install pytest pyspark && python load_tests.py --junitxml=/hostworkdir/junit.xml"
+              bash -c "pip install pytest pyspark && pytest load_tests.py --junitxml=/hostworkdir/junit.xml"
             displayName: "Run PySpark Tests"
 
           - task: PublishTestResults@2

@@ -81,7 +81,7 @@ def convert_to_parquet(file_info: dict) -> None:
         # Show tables
         spark.sql("SELECT * FROM default.my_table LIMIT 10").show()
         
-        create_artifact_csv(df,file_info["file_to_load"])
+        #create_artifact_csv(df,file_info["file_to_load"])
         
     else:
         print(f'{file_name_date} already exists in parquet')

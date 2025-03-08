@@ -32,6 +32,3 @@ def test_row_count(spark):
 # def test_data_type(spark):
 #     df = spark.read.parquet("path/to/loaded/table")
 #     assert df.schema["date_column"].dataType.typeName() == "date", "Date column should be of type date."
-
-if __name__ == "__main__":
-    pytest.main()
