@@ -9,7 +9,7 @@ def spark():
     
 def test_row_count(spark):
     df = spark.read.parquet("data_lake/dimcurrency")
-    assert df.count() > 10000000000, "Table should have at least one row."
+    assert df.count() > 0, "Table should have at least one row."
 
 # def test_null_values(spark):
 #     df = spark.read.parquet("path/to/loaded/table")

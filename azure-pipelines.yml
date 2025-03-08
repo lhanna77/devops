@@ -56,6 +56,10 @@ stages:
               docker cp lhanna12-spark-container:/app/junit.xml $(System.DefaultWorkingDirectory)/junit.xml
             displayName: "Copy JUnit XML"
 
+          - script: |
+              ls $(Build.ArtifactStagingDirectory)
+            displayName: "Debug list Artifact directory"
+
           - task: PublishTestResults@2
             inputs:
               testResultsFormat: 'JUnit'
