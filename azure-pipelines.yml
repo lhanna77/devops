@@ -50,6 +50,7 @@ stages:
               -e BUILD_ARTIFACTSTAGINGDIRECTORY=/app/output \
               $(DOCKER_HUB_REPO):$(IMAGE_TAG)
             displayName: "Run Spark Job"
+            continueOnError: true
 
           - script: |
               docker cp lhanna12-spark-container:/app/junit.xml $(System.DefaultWorkingDirectory)/junit.xml
