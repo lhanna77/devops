@@ -14,7 +14,7 @@ COPY load_tests.py .
 COPY data/ ./data/
 COPY schemas/ ./schemas/
 
-CMD ["sh", "-c", "python main.py && /.local/bin/pytest load_tests.py --junitxml=/app/junit.xml"]
+CMD ["sh", "-c", "python main.py && /.local/bin/pytest load_tests.py --junitxml=/app/junit.xml && sleep 60"]
 
 # CMD ["python", "main.py"]
 # CMD ["sh", "-c", "spark-submit main.py && load_data_lake.py && python load_dwh_silver.py"]
