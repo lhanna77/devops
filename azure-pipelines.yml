@@ -57,8 +57,12 @@ stages:
             displayName: "Copy JUnit XML"
 
           - script: |
+              ls $(System.DefaultWorkingDirectory)
+            displayName: "List app directory"
+
+          - script: |
               ls $(Build.ArtifactStagingDirectory)
-            displayName: "Debug list Artifact directory"
+            displayName: "List csv Artifact directory"
 
           - task: PublishTestResults@2
             inputs:
@@ -70,12 +74,12 @@ stages:
           - task: PublishPipelineArtifact@1
             inputs:
               targetPath: '$(System.DefaultWorkingDirectory)/junit.xml'
-              artifact: 'PySparkTestResults'
+              artifactName: 'TestResults'
               publishLocation: 'pipeline'
             displayName: 'Publish Test Results as Artifact'
 
           - task: PublishBuildArtifacts@1
             inputs:
               pathToPublish: "$(Build.ArtifactStagingDirectory)"
-              artifactName: "csv-results"
-              displayName: "Upload CSV Results"
+              artifactName: "CsvResults"
+            displayName: "Publish CSV Results as Artifact"
